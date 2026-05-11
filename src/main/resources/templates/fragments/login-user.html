@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - EventManager</title>
+  <link rel="stylesheet" href="/webjars/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container">
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h4 class="mb-0">🎟️ EventManager</h4>
+          <small>Gestion d'événements</small>
+        </div>
+        <div class="card-body">
+          <form id="loginForm">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Mot de passe</label>
+              <input type="password" id="password" class="form-control" required>
+            </div>
+            <div id="message" class="alert d-none"></div>
+            <button type="button" class="btn btn-success w-100" onclick="login()">Se connecter</button>
+          </form>
+
+          <hr>
+
+          <div class="text-center">
+            <span>Pas encore de compte ? </span>
+            <a href="/register" class="text-primary">S'inscrire</a>
+          </div>
+
+          <div class="text-center mt-2">
+            <small>
+              <a href="/admin-login">Accès administration</a>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const msgDiv = document.getElementById('message');
+
+      try {
+          const response = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({email: email, password: password})
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+              // Stocker le token dans localStorage
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('role', data.role);
+              localStorage.setItem('email', data.email);
+
+              // Redirection selon le rôle
+              if (data.role === 'admin') {
+                  window.location.href = '/admin';
+              } else if (data.role === 'agent') {
+                  window.location.href = '/agent-dashboard';
+              } else {
+                  window.location.href = '/events';
+              }
+          } else {
+              msgDiv.className = 'alert alert-danger';
+              msgDiv.textContent = data.error || 'Email ou mot de passe incorrect';
+              msgDiv.classList.remove('d-none');
+          }
+      } catch (error) {
+          msgDiv.className = 'alert alert-danger';
+          msgDiv.textContent = 'Erreur de connexion au serveur';
+          msgDiv.classList.remove('d-none');
+      }
+  }
+</script>
+<script src="/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

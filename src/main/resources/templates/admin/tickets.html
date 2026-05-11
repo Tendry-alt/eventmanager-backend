@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3>🎟️ EventManager</h3>
+        <small>Administration</small>
+    </div>
+    <div class="sidebar-menu">
+        <a href="/admin" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/events" class="menu-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Événements</span>
+        </a>
+        <a href="/admin/users" class="menu-item">
+            <i class="fas fa-users"></i>
+            <span>Utilisateurs</span>
+        </a>
+        <a href="/admin/tickets" class="menu-item active">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Tickets</span>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestion des tickets</h2>
+    </div>
+
+    <!-- Filtres -->
+    <div class="data-card mb-4">
+        <form class="row g-3" method="get" action="/admin/tickets">
+            <div class="col-md-3">
+                <select name="eventId" class="form-control">
+                    <option value="">Tous les événements</option>
+                    <option th:each="event : ${events}" th:value="${event.id}" th:text="${event.name}" th:selected="${filterEventId == event.id}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="used" class="form-control">
+                    <option value="">Tous les statuts</option>
+                    <option value="true" th:selected="${filterUsed == 'true'}">Utilisé</option>
+                    <option value="false" th:selected="${filterUsed == 'false'}">Non utilisé</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="/admin/tickets" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo"></i> Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des tickets -->
+    <div class="data-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Événement</th>
+                    <th>Utilisateur</th>
+                    <th>Statut</th>
+                    <th>Validé par</th>
+                    <th>Date génération</th>
+                    <th>Date validation</th>
+                    <th>Actions</th>
+                </thead>
+                <tbody>
+                <tr th:each="ticket : ${tickets}">
+                    <td th:text="${ticket.id}">-</td>
+                    <td th:text="${ticket.eventName}">-</td>
+                    <td th:text="${ticket.userEmail}">-</td>
+                    <td>
+                        <span th:if="${ticket.used}" class="badge-danger">Utilisé</span>
+                        <span th:unless="${ticket.used}" class="badge-success">Valide</span>
+                    </td>
+                    <td th:text="${ticket.validatedByName != null ? ticket.validatedByName : '-'}">-</td>
+                    <td th:text="${ticket.generatedAt}">-</td>
+                    <td th:text="${ticket.validatedAt != null ? ticket.validatedAt : '-'}">-</td>
+                    <td>
+                        <button class="btn-delete" th:onclick="'deleteTicket(' + ${ticket.id} + ')'">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${tickets.empty}">
+                    <td colspan="8" class="text-center">Aucun ticket trouvé</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-delete {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 1.1rem;
+    }
+    .btn-delete:hover {
+        opacity: 0.7;
+    }
+    .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .badge-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .form-control {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+    }
+    .btn-secondary {
+        background: #64748b;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: white;
+    }
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid #64748b;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: #64748b;
+    }
+    .data-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+</style>
+
+<script>
+    function deleteTicket(ticketId) {
+        if (confirm('Supprimer ce ticket ? Cette action est irréversible.')) {
+            fetch('/admin/tickets/delete/' + ticketId, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(function(response) {
+                if (response.ok) {
+                    alert('Ticket supprimé avec succès');
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la suppression');
+                }
+            }).catch(function(error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression');
+            });
+        }
+    }
+</script>
+</body>
+</html>

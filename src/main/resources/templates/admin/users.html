@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3>🎟️ EventManager</h3>
+        <small>Administration</small>
+    </div>
+    <div class="sidebar-menu">
+        <a href="/admin" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/events" class="menu-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Événements</span>
+        </a>
+        <a href="/admin/users" class="menu-item active">
+            <i class="fas fa-users"></i>
+            <span>Utilisateurs</span>
+        </a>
+        <a href="/admin/tickets" class="menu-item">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Tickets</span>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestion des utilisateurs</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
+            <i class="fas fa-user-plus"></i> Nouvel utilisateur
+        </button>
+    </div>
+
+    <!-- Filtres -->
+    <div class="data-card mb-4">
+        <form class="row g-3" method="get" action="/admin/users">
+            <div class="col-md-3">
+                <input type="text" name="email" class="form-control" placeholder="Email" th:value="${filterEmail}">
+            </div>
+            <div class="col-md-3">
+                <select name="role" class="form-control">
+                    <option value="">Tous les rôles</option>
+                    <option value="admin" th:selected="${filterRole == 'admin'}">Admin</option>
+                    <option value="user" th:selected="${filterRole == 'user'}">Utilisateur</option>
+                    <option value="agent" th:selected="${filterRole == 'agent'}">Agent</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="enabled" class="form-control">
+                    <option value="">Tous les statuts</option>
+                    <option value="true" th:selected="${filterEnabled == 'true'}">Activé</option>
+                    <option value="false" th:selected="${filterEnabled == 'false'}">En attente</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="/admin/users" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo"></i> Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des utilisateurs -->
+    <div class="data-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Statut</th>
+                    <th>Date création</th>
+                    <th>Actions</th>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}">-</td>
+                    <td th:text="${user.email}">-</td>
+                    <td>
+                        <select class="role-select" th:onchange="'updateRole(' + ${user.id} + ', this.value)'">
+                            <option value="admin" th:selected="${user.role == 'admin'}">Admin</option>
+                            <option value="user" th:selected="${user.role == 'user'}">Utilisateur</option>
+                            <option value="agent" th:selected="${user.role == 'agent'}">Agent</option>
+                        </select>
+                    </td>
+                    <td>
+                                <span th:if="${user.enabled}" class="badge-success">
+                                    <i class="fas fa-check-circle"></i> Activé
+                                </span>
+                        <span th:unless="${user.enabled}" class="badge-warning">
+                                    <i class="fas fa-clock"></i> En attente
+                                </span>
+                    </td>
+                    <td th:text="${user.createdAt}">-</td>
+                    <td class="actions-cell">
+                        <button th:if="!${user.enabled}" class="btn-approve" th:onclick="'approveUser(' + ${user.id} + ')'" title="Approuver">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                        <button th:if="${user.enabled}" class="btn-disable" th:onclick="'disableUser(' + ${user.id} + ')'" title="Désactiver">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                        <button class="btn-delete" th:onclick="'deleteUser(' + ${user.id} + ')'" title="Supprimer">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${users.empty}">
+                    <td colspan="6" class="text-center">Aucun utilisateur trouvé</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajout Utilisateur -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvel utilisateur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="userForm" method="post" action="/admin/users/create">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rôle</label>
+                        <select class="form-control" name="role" required>
+                            <option value="user">Utilisateur</option>
+                            <option value="agent">Agent</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Statut</label>
+                        <select class="form-control" name="enabled">
+                            <option value="true">Activé</option>
+                            <option value="false">En attente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .role-select {
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.85rem;
+        width: 110px;
+    }
+    .actions-cell {
+        white-space: nowrap;
+    }
+    .btn-approve, .btn-disable, .btn-delete {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.1rem;
+        margin: 0 4px;
+        padding: 4px;
+    }
+    .btn-approve {
+        color: #10b981;
+    }
+    .btn-approve:hover {
+        color: #059669;
+    }
+    .btn-disable {
+        color: #f59e0b;
+    }
+    .btn-disable:hover {
+        color: #d97706;
+    }
+    .btn-delete {
+        color: #ef4444;
+    }
+    .btn-delete:hover {
+        color: #dc2626;
+    }
+    .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .badge-warning {
+        background: #fed7aa;
+        color: #92400e;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .form-control {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+    }
+    .btn-secondary {
+        background: #64748b;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: white;
+    }
+    .btn-outline-secondary {
+        background: transparent;
+        border: 1px solid #64748b;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: #64748b;
+    }
+    .data-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .data-table {
+        width: 100%;
+    }
+    .data-table th {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+    }
+    .data-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+</style>
+
+<script>
+    function resetUserForm() {
+        document.getElementById('userForm').reset();
+    }
+
+    function updateRole(userId, role) {
+        console.log('Update role:', userId, role);
+        fetch('/admin/users/update-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'userId=' + userId + '&role=' + role
+        }).then(function(response) {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Erreur lors de la mise à jour');
+            }
+        }).catch(function(error) {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la mise à jour');
+        });
+    }
+
+    function approveUser(userId) {
+        console.log('Approve user:', userId);
+        if (confirm('Approuver cet utilisateur ? Un email de validation lui sera envoyé.')) {
+            fetch('/admin/users/approve/' + userId, {
+                method: 'POST'
+            }).then(function(response) {
+                if (response.ok) {
+                    alert('Utilisateur approuvé. Un email a été envoyé.');
+                    location.reload();
+                } else {
+                    alert('Erreur lors de l\'approbation');
+                }
+            }).catch(function(error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'approbation');
+            });
+        }
+    }
+
+    function disableUser(userId) {
+        console.log('Disable user:', userId);
+        if (confirm('Désactiver cet utilisateur ?')) {
+            fetch('/admin/users/disable/' + userId, {
+                method: 'POST'
+            }).then(function(response) {
+                if (response.ok) {
+                    alert('Utilisateur désactivé.');
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la désactivation');
+                }
+            }).catch(function(error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la désactivation');
+            });
+        }
+    }
+
+    function deleteUser(userId) {
+        console.log('Delete user:', userId);
+        if (confirm('Supprimer cet utilisateur ? Cette action est irréversible.')) {
+            window.location.href = '/admin/users/delete/' + userId;
+        }
+    }
+</script>
+</body>
+</html>

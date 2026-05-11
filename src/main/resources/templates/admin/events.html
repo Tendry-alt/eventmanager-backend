@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3>🎟️ EventManager</h3>
+        <small>Administration</small>
+    </div>
+    <div class="sidebar-menu">
+        <a href="/admin" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/events" class="menu-item active">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Événements</span>
+        </a>
+        <a href="/admin/users" class="menu-item">
+            <i class="fas fa-users"></i>
+            <span>Utilisateurs</span>
+        </a>
+        <a href="/admin/tickets" class="menu-item">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Tickets</span>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestion des événements</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal" onclick="resetEventForm()">
+            <i class="fas fa-plus"></i> Nouvel événement
+        </button>
+    </div>
+
+    <div class="data-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Lieu</th>
+                    <th>Capacité</th>
+                    <th>Tickets</th>
+                    <th>Actions</th>
+                </thead>
+                <tbody>
+                <tr th:each="event : ${events}">
+                    <td th:text="${event.id}">-</td>
+                    <td th:text="${event.name}">-</td>
+                    <td th:text="${event.description}">-</td>
+                    <td th:text="${event.eventDate}">-</td>
+                    <td th:text="${event.location}">-</td>
+                    <td th:text="${event.capacity}">-</td>
+                    <td>
+                        <span class="badge-info" th:text="${event.ticketsCount}">0</span>
+                    </td>
+                    <td>
+                        <button class="btn-edit" th:onclick="'editEvent(' + ${event.id} + ')'">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-delete" th:onclick="'deleteEvent(' + ${event.id} + ')'">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${events.empty}">
+                    <td colspan="8" class="text-center">Aucun événement trouvé</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Événement -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Nouvel événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="eventForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="eventId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date et heure</label>
+                        <input type="datetime-local" class="form-control" id="eventDate" name="eventDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lieu</label>
+                        <input type="text" class="form-control" id="location" name="location">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Capacité</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-edit {
+        background: none;
+        border: none;
+        color: #f59e0b;
+        cursor: pointer;
+        font-size: 1.1rem;
+        margin-right: 8px;
+    }
+    .btn-delete {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 1.1rem;
+    }
+    .btn-edit:hover, .btn-delete:hover {
+        opacity: 0.7;
+    }
+    .badge-info {
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+</style>
+
+<script>
+    function resetEventForm() {
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventId').value = '';
+        document.getElementById('modalTitle').innerText = 'Nouvel événement';
+        document.getElementById('eventForm').action = '/admin/events/create';
+    }
+
+    function editEvent(id) {
+        console.log('Edit event:', id);
+        fetch('/admin/events/' + id)
+            .then(response => response.json())
+            .then(event => {
+                document.getElementById('eventId').value = event.id;
+                document.getElementById('name').value = event.name;
+                document.getElementById('description').value = event.description;
+                const dateStr = event.eventDate.replace(' ', 'T').slice(0, 16);
+                document.getElementById('eventDate').value = dateStr;
+                document.getElementById('location').value = event.location;
+                document.getElementById('capacity').value = event.capacity;
+                document.getElementById('modalTitle').innerText = 'Modifier événement';
+                document.getElementById('eventForm').action = '/admin/events/update';
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function deleteEvent(id) {
+        console.log('Delete event:', id);
+        if (confirm('Supprimer cet événement ? Tous les tickets associés seront également supprimés.')) {
+            window.location.href = '/admin/events/delete/' + id;
+        }
+    }
+</script>
+</body>
+</html>

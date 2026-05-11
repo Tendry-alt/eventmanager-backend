@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3>🎟️ EventManager</h3>
+        <small>Administration</small>
+    </div>
+    <div class="sidebar-menu">
+        <a href="/admin" class="menu-item active">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/events" class="menu-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Événements</span>
+        </a>
+        <a href="/admin/users" class="menu-item">
+            <i class="fas fa-users"></i>
+            <span>Utilisateurs</span>
+        </a>
+        <a href="/admin/tickets" class="menu-item">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Tickets</span>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <h1 class="mb-4">Tableau de bord</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">📅</div>
+                <div class="value" th:text="${stats.eventsCount}">0</div>
+                <div class="label">Événements</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <div class="value" th:text="${stats.usersCount}">0</div>
+                <div class="label">Utilisateurs</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">🎫</div>
+                <div class="value" th:text="${stats.ticketsCount}">0</div>
+                <div class="label">Tickets générés</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">✅</div>
+                <div class="value" th:text="${stats.usedTicketsCount}">0</div>
+                <div class="label">Tickets utilisés</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="data-card">
+                <h5 class="mb-3">Tickets par événement</h5>
+                <canvas id="ticketsChart" height="250"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="data-card">
+                <h5 class="mb-3">Derniers tickets</h5>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Événement</th>
+                            <th>Utilisateur</th>
+                            <th>Statut</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ticket : ${recentTickets}">
+                            <td th:text="${ticket.id}">-</td>
+                            <td th:text="${ticket.eventName}">-</td>
+                            <td th:text="${ticket.userEmail}">-</td>
+                            <td>
+                                <span th:if="${ticket.used}" class="badge-danger">Utilisé</span>
+                                <span th:unless="${ticket.used}" class="badge-success">Valide</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('ticketsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: /*[[${eventNames}]]*/ [],
+            datasets: [{
+                label: 'Nombre de tickets',
+                data: /*[[${eventTicketCounts}]]*/ [],
+                backgroundColor: '#2563eb',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+</body>
+</html>

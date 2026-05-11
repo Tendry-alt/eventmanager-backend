@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<nav th:fragment="navbar" class="top-navbar">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="user-info">
+        <i class="fas fa-user-circle"></i>
+        <span th:text="${session.adminEmail}">Admin</span>
+        <a href="/logout" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Déconnexion
+        </a>
+    </div>
+</nav>
